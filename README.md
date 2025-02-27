@@ -1,4 +1,4 @@
-Phishing Scanner
+Threat Scanner
 -
 
 Run the script with python interpreter.

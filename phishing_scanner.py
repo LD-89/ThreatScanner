@@ -21,6 +21,7 @@ BLOCK_LIST_PROJECT_URL = "https://blocklistproject.github.io/Lists/alt-version/p
 GOOGLE_SAFE_BROWSING_API_URL = "https://safebrowsing.googleapis.com/v4/"
 
 ## CREDENTIALS
+# TODO move to config
 # Provide your keys here.
 VIRUS_TOTAL_API_KEY = "virus_total_api_key"
 GOOGLE_SAFE_BROWSING_API_KEY = "google_safe_browsing_api_key"
@@ -30,7 +31,7 @@ VIRUS_TOTAL_MALICIOUS_THRESHOLD = 3
 VIRUS_TOTAL_RATE_LIMIT_TIME = 15
 
 
-class PhishingScanner:
+class ThreatScanner:
     phishing_websites: dict
     final_report: list
 
@@ -129,7 +130,9 @@ class PhishingScanner:
         def _create_payload() -> dict:
             return {
                 'client': {
-                    'clientId': "phishingscanner-442113",
+                    # TODO move to config
+                    # Register your threat scanner app
+                    'clientId': "threat_scanner_id_placeholder",
                     'clientVersion': "1.0"
                 },
                 'threatInfo': {
@@ -361,13 +364,13 @@ class PhishingScanner:
             print("Done.")
 
 
-class PhishingScannerCLI(cmd.Cmd):
+class ThreatScannerCLI(cmd.Cmd):
     prompt = "PhishScan>> "
-    intro = "Welcome to PhishingScanner! Type help to learn more."
+    intro = "Welcome to ThreatScanner! Type help to learn more."
 
     def __init__(self):
         super().__init__()
-        self.app = PhishingScanner()
+        self.app = ThreatScanner()
 
     def do_get_sources(self, limit: str):
         """
@@ -424,4 +427,4 @@ class PhishingScannerCLI(cmd.Cmd):
         return stop
 
 if __name__ == '__main__':
-    PhishingScannerCLI().cmdloop()
+    ThreatScannerCLI().cmdloop()
