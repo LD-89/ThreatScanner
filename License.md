@@ -1,0 +1,1 @@
+Copyright 2024 by Dariusz Lenart (dariusz@lenart-it.pl).
