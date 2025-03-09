@@ -2,7 +2,10 @@ Threat Scanner
 -
 
 Run the script with python interpreter.
+
 Use Command Line Interface to get the results.
+
+!Important - Be sure to set your API keys in the environment file.
 
 Available commands:
 - get_sources [limit: optional, default=100]
