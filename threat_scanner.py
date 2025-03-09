@@ -1,7 +1,9 @@
 import csv
+import os
 import json
 from datetime import datetime
 from typing import Tuple
+from dotenv import load_dotenv
 import requests
 import asyncio
 import aiohttp
@@ -11,22 +13,14 @@ import vt
 from urllib.request import urlopen
 from urllib.parse import urlparse
 
+load_dotenv()
 
-## URLS
-# sources
-OPEN_PHISH_FEED_URL = "https://raw.githubusercontent.com/openphish/public_feed/refs/heads/main/feed.txt"
-BLOCK_LIST_PROJECT_URL = "https://blocklistproject.github.io/Lists/alt-version/phishing-nl.txt"
+OPEN_PHISH_FEED_URL = os.getenv("OPEN_PHISH_FEED_URL")
+BLOCK_LIST_PROJECT_URL = os.getenv("BLOCK_LIST_PROJECT_URL")
+GOOGLE_SAFE_BROWSING_API_URL = os.getenv("GOOGLE_SAFE_BROWSING_API_URL")
+VIRUS_TOTAL_API_KEY = os.getenv("VIRUS_TOTAL_API_KEY")
+GOOGLE_SAFE_BROWSING_API_KEY = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY")
 
-# scanners
-GOOGLE_SAFE_BROWSING_API_URL = "https://safebrowsing.googleapis.com/v4/"
-
-## CREDENTIALS
-# TODO move to config
-# Provide your keys here.
-VIRUS_TOTAL_API_KEY = "virus_total_api_key"
-GOOGLE_SAFE_BROWSING_API_KEY = "google_safe_browsing_api_key"
-
-## OTHER
 VIRUS_TOTAL_MALICIOUS_THRESHOLD = 3
 VIRUS_TOTAL_RATE_LIMIT_TIME = 15
 
