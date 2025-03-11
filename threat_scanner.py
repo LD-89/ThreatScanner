@@ -13,23 +13,35 @@ import vt
 from urllib.request import urlopen
 from urllib.parse import urlparse
 
+from storage import FileStorage, S3Storage
+
 load_dotenv()
 
+# urls
 OPEN_PHISH_FEED_URL = os.getenv("OPEN_PHISH_FEED_URL")
 BLOCK_LIST_PROJECT_URL = os.getenv("BLOCK_LIST_PROJECT_URL")
 GOOGLE_SAFE_BROWSING_API_URL = os.getenv("GOOGLE_SAFE_BROWSING_API_URL")
+
+# credentials
 VIRUS_TOTAL_API_KEY = os.getenv("VIRUS_TOTAL_API_KEY")
 GOOGLE_SAFE_BROWSING_API_KEY = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY")
 
+# configs
 VIRUS_TOTAL_MALICIOUS_THRESHOLD = 3
 VIRUS_TOTAL_RATE_LIMIT_TIME = 15
 
 
 class ThreatScanner:
+    storage = None
     phishing_websites: dict
     final_report: list
 
     def __init__(self):
+        if os.environ.get('USE_S3_STORAGE', 'False').lower() == 'true':
+            bucket_name = os.environ.get('S3_BUCKET_NAME', 'threatscanner-data')
+            self.storage = S3Storage(bucket_name)
+        else:
+            self.storage = FileStorage()
         self.phishing_websites = {}
         self.final_report = []
 
@@ -122,11 +134,11 @@ class ThreatScanner:
         :return: dict or None
         """
         def _create_payload() -> dict:
+            google_threat_scanner_app_id = os.getenv("GOOGLE_THREAT_SCANNER_APP_ID")
             return {
                 'client': {
-                    # TODO move to config
                     # Register your threat scanner app
-                    'clientId': "threat_scanner_id_placeholder",
+                    'clientId': google_threat_scanner_app_id,
                     'clientVersion': "1.0"
                 },
                 'threatInfo': {
@@ -168,7 +180,6 @@ class ThreatScanner:
             if "google_safe_browsing_report" not in self.phishing_websites[url]:
                 self.phishing_websites[url]["google_safe_browsing_report"] = {}
                 self.phishing_websites[url]["google_safe_browsing_result"] = False
-
 
     def _scan_google_safe_browsing(self):
         """
@@ -263,7 +274,6 @@ class ThreatScanner:
         print(f"Analysis completed. Final report is ready for viewing or saving.")
 
 
-
     def get_sources(self, limit: int):
         """Method used by CLI to fetch sources"""
         self._set_phishing_websites(limit)
@@ -280,14 +290,7 @@ class ThreatScanner:
         if not self.phishing_websites:
             print("No phishing websites found.")
         else:
-            timestamp = self._get_timestamp()
-            filename = f'{timestamp}_sources.csv'
-            print(f"Writing phishing websites to {filename} ...", end="\t")
-            with open(filename, 'w', newline='') as file:
-                writer = csv.writer(file)
-                for url in self.phishing_websites:
-                    writer.writerow([url])
-            print("Done.")
+            self.storage.save(self.phishing_websites, 'sources', 'csv')
 
     def scan_websites(self):
         """Method used by CLI to scan websites"""
@@ -359,7 +362,7 @@ class ThreatScanner:
 
 
 class ThreatScannerCLI(cmd.Cmd):
-    prompt = "PhishScan>> "
+    prompt = "ThreatScan>> "
     intro = "Welcome to ThreatScanner! Type help to learn more."
 
     def __init__(self):
