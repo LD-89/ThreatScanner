@@ -1,6 +1,4 @@
-import csv
 import os
-import json
 from datetime import datetime
 from typing import Tuple
 from dotenv import load_dotenv
@@ -340,25 +338,7 @@ class ThreatScanner:
         elif not self.final_report:
             print("Final report not ready.")
         else:
-            timestamp = self._get_timestamp()
-            filename = f'{timestamp}_final_report.{file_type}'
-            print(f"Writing scan results to {filename} ...", end="\t")
-            if file_type not in ["csv", "md", "json"]:
-                print(f"Error: Unknown file type {file_type} specified.")
-                return
-            with open(filename, 'w', newline='') as file:
-                if file_type == 'csv':
-                    writer = csv.writer(file)
-                    for line in self.final_report:
-                        writer.writerow([line])
-                elif file_type == 'md':
-                    with open(filename, 'w') as file:
-                        for line in self.final_report:
-                            file.write(f"{line}\n")
-                elif file_type == 'json':
-                    with open(filename, 'w') as file:
-                        json.dump(self.final_report, file, indent=4)
-            print("Done.")
+            self.storage.save(self.final_report, 'final_report', file_type)
 
 
 class ThreatScannerCLI(cmd.Cmd):
@@ -408,7 +388,7 @@ class ThreatScannerCLI(cmd.Cmd):
     def do_save_results(self, file_type: str):
         """
         Save final report to a file.
-        Specify file type: csv, json or md.
+        Specify file type: csv, json, txt or md.
         Default file type is csv.
         """
         if not file_type:

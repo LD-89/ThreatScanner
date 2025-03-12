@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import boto3
 import os
 import csv
+import json
 from datetime import datetime
 
 
@@ -25,14 +26,19 @@ class FileStorage(Storage):
         timestamp = self._get_timestamp()
         file_name = f"{timestamp}_{data_type}.{file_type}"
         print(f"Writing {data_type} to {file_name} ...", end="\t")
-        if file_type == "csv":
-            with open(file_name, 'w', newline='') as file:
+        if file_type not in ["csv", "md", "txt", "json"]:
+            print(f"Error: Unsupported file type {file_type}.")
+            return
+        with open(file_name, 'w', newline='') as file:
+            if file_type == "csv":
                 writer = csv.writer(file)
                 for row in data:
                     writer.writerow([row])
-        else:
-            print("Unsupported file type.")
-            return
+            elif file_type == 'json':
+                json.dump(data, file, indent=4)
+            else:
+                for line in data:
+                    file.write(f"{line}\n")
 
         print(f"{data_type} saved to {file_name}")
 
