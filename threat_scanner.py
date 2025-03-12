@@ -283,12 +283,12 @@ class ThreatScanner:
         for url in self.phishing_websites:
             print(url)
 
-    def save_sources(self):
+    def save_sources(self, data_format: str):
         """Method used by CLI to save sources to a csv file"""
         if not self.phishing_websites:
             print("No phishing websites found.")
         else:
-            self.storage.save(self.phishing_websites, 'sources', 'csv')
+            self.storage.save(self.phishing_websites, 'sources', data_format)
 
     def scan_websites(self):
         """Method used by CLI to scan websites"""
@@ -331,14 +331,14 @@ class ThreatScanner:
                 print(line)
             print("---")
 
-    def save_results(self, file_type: str):
+    def save_results(self, data_format: str):
         """Method used by CLI to save final report to a file"""
         if not self.phishing_websites:
             print("No phishing websites found.")
         elif not self.final_report:
             print("Final report not ready.")
         else:
-            self.storage.save(self.final_report, 'final_report', file_type)
+            self.storage.save(self.final_report, 'final_report', data_format)
 
 
 class ThreatScannerCLI(cmd.Cmd):
@@ -363,9 +363,17 @@ class ThreatScannerCLI(cmd.Cmd):
         """Print sources to the terminal."""
         self.app.print_sources()
 
-    def do_save_sources(self, line):
-        """Save sources to a csv file."""
-        self.app.save_sources()
+    def do_save_sources(self, data_format: str):
+        """
+        Save sources to a csv file.
+        Specify type:
+        - csv, json, txt or md for file storage
+        - csv, json for S3 storage
+        Default type is csv.
+        """
+        if not data_format:
+            data_format = "csv"
+        self.app.save_sources(data_format)
 
     def do_scan(self, line):
         """
@@ -385,15 +393,17 @@ class ThreatScannerCLI(cmd.Cmd):
         """Print final report to the terminal."""
         self.app.print_results()
 
-    def do_save_results(self, file_type: str):
+    def do_save_results(self, data_format: str):
         """
         Save final report to a file.
-        Specify file type: csv, json, txt or md.
-        Default file type is csv.
+        Specify type:
+        - csv, json, txt or md for file storage
+        - csv, json for S3 storage
+        Default type is json.
         """
-        if not file_type:
-            file_type = "csv"
-        self.app.save_results(file_type)
+        if not data_format:
+            data_format = "json"
+        self.app.save_results(data_format)
 
     def do_quit(self, line):
         """Quit the CLI."""

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from botocore.exceptions import ClientError
 import boto3
 import os
 import csv
@@ -12,7 +13,7 @@ class Storage(ABC):
         return datetime.now().strftime("%Y%m%d_%H%M")
 
     @abstractmethod
-    def save(self, data, file_name, file_type):
+    def save(self, data, data_type, data_format):
         pass
 
     @abstractmethod
@@ -21,20 +22,20 @@ class Storage(ABC):
 
 
 class FileStorage(Storage):
-    def save(self, data, data_type: str = "threat_scanner_data" , file_type: str = "csv"):
+    def save(self, data, data_type: str = "threat_scanner_data" , data_format: str = "csv"):
         """Save data to file"""
         timestamp = self._get_timestamp()
-        file_name = f"{timestamp}_{data_type}.{file_type}"
+        file_name = f"{timestamp}_{data_type}.{data_format}"
         print(f"Writing {data_type} to {file_name} ...", end="\t")
-        if file_type not in ["csv", "md", "txt", "json"]:
-            print(f"Error: Unsupported file type {file_type}.")
+        if data_format not in ["csv", "md", "txt", "json"]:
+            print(f"Error: Unsupported file type {data_format}.")
             return
         with open(file_name, 'w', newline='') as file:
-            if file_type == "csv":
+            if data_format == "csv":
                 writer = csv.writer(file)
                 for row in data:
                     writer.writerow([row])
-            elif file_type == 'json':
+            elif data_format == 'json':
                 json.dump(data, file, indent=4)
             else:
                 for line in data:
@@ -58,13 +59,40 @@ class S3Storage(Storage):
         )
         self.bucket_name = bucket_name
 
-    def save(self, data, data_type: str = "threat_scanner_data" , file_type: str = "csv"):
+    def save(self, data, data_type: str = "threat_scanner_data" , data_format: str = "json"):
         """Save data to S3 bucket"""
-        print("Not implemented yet.")
-        pass
+        timestamp = self._get_timestamp()
+        key = f"{timestamp}_{data_type}.{data_format}"
+        print(f"Saving {data_type} to S3 Bucket: {self.bucket_name} under key {key} ...", end="\t")
+        try:
+            if data_format == 'json':
+                content = json.dumps(data)
+                content_type = 'application/json'
+            elif data_format == 'csv':
+                content = self._convert_to_csv(data)
+                content_type = 'text/csv'
+                print(f"Not implemented saving csv to S3, yet.")
+                return
+            else:
+                print(f"Error: Unsupported data format {data_format}.")
+                return
 
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=key,
+                Body=content,
+                ContentType=content_type
+            )
+            return True
+        except ClientError as e:
+            print(f"Error saving to S3: {e}")
+            return False
 
     def load(self):
         """Load data from S3 bucket"""
         print("Not implemented yet.")
         pass
+
+    def _convert_to_csv(self, data):
+        # TODO implement csv conversion
+        return data.to_csv().encode('utf-8')
