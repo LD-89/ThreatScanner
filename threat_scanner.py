@@ -1,7 +1,5 @@
-import os
 from datetime import datetime
 from typing import Tuple
-from dotenv import load_dotenv
 import requests
 import asyncio
 import aiohttp
@@ -9,23 +7,8 @@ import time
 import vt
 from urllib.request import urlopen
 from urllib.parse import urlparse
-
 from storage import FileStorage, S3Storage
-
-load_dotenv()
-
-# urls
-OPEN_PHISH_FEED_URL = os.getenv("OPEN_PHISH_FEED_URL")
-BLOCK_LIST_PROJECT_URL = os.getenv("BLOCK_LIST_PROJECT_URL")
-GOOGLE_SAFE_BROWSING_API_URL = os.getenv("GOOGLE_SAFE_BROWSING_API_URL")
-
-# credentials
-VIRUS_TOTAL_API_KEY = os.getenv("VIRUS_TOTAL_API_KEY")
-GOOGLE_SAFE_BROWSING_API_KEY = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY")
-
-# configs
-VIRUS_TOTAL_MALICIOUS_THRESHOLD = 3
-VIRUS_TOTAL_RATE_LIMIT_TIME = 15
+import config
 
 
 class ThreatScanner:
@@ -34,8 +17,8 @@ class ThreatScanner:
     final_report: list
 
     def __init__(self):
-        if os.environ.get('USE_S3_STORAGE', 'False').lower() == 'true':
-            bucket_name = os.environ.get('S3_BUCKET_NAME', 'threatscanner-data')
+        if config.USE_S3_STORAGE.lower() == 'true':
+            bucket_name = config.S3_BUCKET_NAME
             self.storage = S3Storage(bucket_name)
         else:
             self.storage = FileStorage()
@@ -73,8 +56,8 @@ class ThreatScanner:
         Fetches the list of phishing websites from sources and merges them into a dict.
         """
         print(f"Gathering sources...")
-        open_phish_urls = self._get_list_from_url(OPEN_PHISH_FEED_URL)
-        block_list_urls = self._get_list_from_url(BLOCK_LIST_PROJECT_URL)
+        open_phish_urls = self._get_list_from_url(config.OPEN_PHISH_FEED_URL)
+        block_list_urls = self._get_list_from_url(config.BLOCK_LIST_PROJECT_URL)
         full_urls_list = open_phish_urls + block_list_urls
         self.phishing_websites = {url: {"url": url} for url in full_urls_list[:limit]}
         print(f"Sources gathered: {len(self.phishing_websites)}")
@@ -106,7 +89,7 @@ class ThreatScanner:
             malicious_reports_count = (
                 phishing_website["virus_total_report"]["attributes"].get("last_analysis_stats", {}).get("malicious", 0)
             )
-            if malicious_reports_count >= VIRUS_TOTAL_MALICIOUS_THRESHOLD:
+            if malicious_reports_count >= config.VIRUS_TOTAL_MALICIOUS_THRESHOLD:
                 return True
         return False
 
@@ -115,12 +98,12 @@ class ThreatScanner:
         Check the list of phishing websites against a VirusTotal scan reports.
         """
         print("VirusTotal scan started.")
-        self.client = vt.Client(VIRUS_TOTAL_API_KEY)
+        self.client = vt.Client(config.VIRUS_TOTAL_API_KEY)
         for url, website in self.phishing_websites.items():
             self.phishing_websites[url]["virus_total_report"] = (self._get_vt_report_for_website(url))
             self.phishing_websites[url]["virus_total_malicious_result"] = self._get_malicious_result(website)
             # Limiting the number of requests based on public API limits
-            time.sleep(VIRUS_TOTAL_RATE_LIMIT_TIME)
+            time.sleep(config.VIRUS_TOTAL_RATE_LIMIT_TIME)
         self.client.close()
         print("VirusTotal scan completed.")
 
@@ -131,7 +114,7 @@ class ThreatScanner:
         :return: dict or None
         """
         def _create_payload() -> dict:
-            google_threat_scanner_app_id = os.getenv("GOOGLE_THREAT_SCANNER_APP_ID")
+            google_threat_scanner_app_id = config.GOOGLE_THREAT_SCANNER_APP_ID
             return {
                 'client': {
                     # Register your threat scanner app
@@ -147,7 +130,7 @@ class ThreatScanner:
             }
 
         print(f"Fetching report for all websites... ", end="\t")
-        api_url = f"{GOOGLE_SAFE_BROWSING_API_URL}threatMatches:find?key={GOOGLE_SAFE_BROWSING_API_KEY}"
+        api_url = f"{config.GOOGLE_SAFE_BROWSING_API_URL}threatMatches:find?key={config.GOOGLE_SAFE_BROWSING_API_KEY}"
         headers = {'Content-Type': 'application/json'}
         payload = _create_payload()
         response = requests.post(api_url, headers=headers, json=payload)

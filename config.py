@@ -1,0 +1,25 @@
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# urls
+OPEN_PHISH_FEED_URL = os.getenv("OPEN_PHISH_FEED_URL")
+BLOCK_LIST_PROJECT_URL = os.getenv("BLOCK_LIST_PROJECT_URL")
+GOOGLE_SAFE_BROWSING_API_URL = os.getenv("GOOGLE_SAFE_BROWSING_API_URL")
+
+# credentials
+VIRUS_TOTAL_API_KEY = os.getenv("VIRUS_TOTAL_API_KEY")
+GOOGLE_SAFE_BROWSING_API_KEY = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY")
+GOOGLE_THREAT_SCANNER_APP_ID = os.getenv("GOOGLE_THREAT_SCANNER_APP_ID")
+
+# configs
+VIRUS_TOTAL_MALICIOUS_THRESHOLD = 3
+VIRUS_TOTAL_RATE_LIMIT_TIME = 15
+
+# AWS S3 Configuration
+USE_S3_STORAGE = os.environ.get('USE_S3_STORAGE', 'False')
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', 'threatscanner-data')
